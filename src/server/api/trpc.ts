@@ -1,4 +1,5 @@
 import { initTRPC } from "@trpc/server";
+import { env } from "~/env";
 
 import superjson from "superjson";
 
@@ -9,6 +10,8 @@ import type Context from "./types/context";
 import isValidCountryCode from "./utils/countryCode";
 import isValidPublicIP from "./utils/ip";
 
+import { createStorefrontClient } from "@paynow-gg/typescript-sdk";
+
 export const createTRPCContext = async ({
   headers,
   resHeaders,
@@ -16,39 +19,41 @@ export const createTRPCContext = async ({
   headers: Headers;
   resHeaders: Headers;
 }): Promise<Context> => {
-  const payNowStorefrontHeaders: Record<string, string> = {};
-
   // IP Address & Country Code Forwarding
 
-  const realIpAddress =
+  const ipAddress =
     headers.get("cf-connecting-ip") ||
     headers.get("x-real-ip") ||
     headers.get("x-forwarded-for")?.split(",")[0]?.trim();
 
-  const realCountryCode = headers.get("cf-ipcountry");
+  const countryCode = headers.get("cf-ipcountry")?.toString();
 
-  if (realIpAddress && isValidPublicIP(realIpAddress)) {
-    payNowStorefrontHeaders["x-paynow-customer-ip"] = realIpAddress;
-  }
-
-  if (realCountryCode && isValidCountryCode(realCountryCode)) {
-    payNowStorefrontHeaders["x-paynow-customer-countrycode"] = realCountryCode;
-  }
-
-  const pnToken = headers
+  const customerToken = headers
     .get("cookie")
     ?.split(";")
     ?.find((cookie) => cookie.trim().startsWith("pn_token="))
     ?.split("=")[1];
 
-  if (pnToken) {
-    payNowStorefrontHeaders.Authorization = `Customer ${pnToken}`;
-  }
+  const paynowStorefrontClient = createStorefrontClient(
+    env.NEXT_PUBLIC_PAYNOW_STORE_ID,
+    customerToken,
+    {
+      headers: {
+        "x-paynow-customer-ip": isValidPublicIP(ipAddress)
+          ? ipAddress
+          : undefined,
+
+        "x-paynow-customer-countrycode": isValidCountryCode(countryCode)
+          ? countryCode
+          : undefined,
+      },
+    },
+  );
 
   return {
     headers,
     resHeaders,
-    payNowStorefrontHeaders,
+    paynowStorefrontClient,
   };
 };
 

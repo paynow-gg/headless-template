@@ -1,6 +1,7 @@
 "use client";
 
 import type Module from "~/server/api/types/paynow/module";
+
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
 export default function RecentPaymentsCard({
@@ -20,10 +21,10 @@ export default function RecentPaymentsCard({
           <div key={idx} className="flex items-center gap-4">
             <img
               src={
-                order.customer.steam?.avatar_url ||
-                order.customer.profile?.avatar_url
+                order.customer.profile?.avatar_url ??
+                order.customer.steam?.avatar_url
               }
-              alt={order.customer.name}
+              alt={order.customer?.name ?? "Order Avatar"}
               height={32}
               width={32}
               className="rounded-sm"

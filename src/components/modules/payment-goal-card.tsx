@@ -4,9 +4,11 @@ import type Module from "~/server/api/types/paynow/module";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
-export default function PaymentGoalCard({
-  module,
-}: { module: Module<"payment_goal"> }) {
+interface Props {
+  module: Module<"payment_goal">;
+}
+
+export default function PaymentGoalCard({ module }: Props) {
   const { data: store } = api.paynow.getStore.useQuery();
 
   const goal = (module.data.settings.goalTarget / 100).toFixed(2);

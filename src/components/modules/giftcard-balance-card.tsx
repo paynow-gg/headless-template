@@ -1,7 +1,7 @@
 "use client";
+
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import type Module from "~/server/api/types/paynow/module";
 import { type RouterInputs, api } from "~/trpc/react";
 import { Button } from "../ui/button";
 import {
@@ -15,9 +15,11 @@ import { Input } from "../ui/input";
 
 type GiftcardBalanceInput = RouterInputs["paynow"]["getGiftcardBalanceByCode"];
 
-export default function GiftcardBalanceCard({
-  module: _module,
-}: { module: Module<"giftcard_balance"> }) {
+// type Props = {
+//   module: Module<"giftcard_balance">
+// }
+
+export default function GiftcardBalanceCard() {
   const form = useForm<GiftcardBalanceInput>({
     defaultValues: {
       code: "",
@@ -27,6 +29,7 @@ export default function GiftcardBalanceCard({
   const checkBalanceMutation = api.paynow.getGiftcardBalanceByCode.useMutation({
     onSuccess: (data) => {
       toast(`Gift card balance: ${(data / 100).toFixed(2)}`);
+
       form.reset();
     },
     onError: (err) => {

@@ -4,18 +4,22 @@ import { GiftIcon } from "@phosphor-icons/react/dist/ssr";
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { formatCents } from "~/lib/money";
-import type Product from "~/server/api/types/paynow/product";
 import { useCartSidebar } from "~/stores/useCartSidebar";
+import type { RouterOutputs } from "~/trpc/react";
 import { Button } from "../ui/button";
 import ProductInfoDialog from "./product-info-dialog";
 
-export default function ProductCard({
-  product,
-  addToCart,
-}: {
-  product: Product;
-  addToCart: (product: Product, subscription: boolean, gift: boolean) => void;
-}) {
+type Props = {
+  product: RouterOutputs["paynow"]["getProducts"][number];
+
+  addToCart: (
+    product: RouterOutputs["paynow"]["getProducts"][number],
+    subscription: boolean,
+    gift: boolean,
+  ) => void;
+};
+
+export default function ProductCard({ product, addToCart }: Props) {
   const cartSidebar = useCartSidebar();
 
   const [preview, setPreview] = React.useState<boolean>(false);
@@ -35,7 +39,7 @@ export default function ProductCard({
           <img
             src={product.image_url}
             alt={product.name}
-            className="mx-auto mt-3 aspect-square flex-shrink-0 rounded-sm"
+            className="mx-auto mt-3 aspect-square shrink-0 rounded-sm"
             height={128}
             width={128}
           />
@@ -47,15 +51,15 @@ export default function ProductCard({
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="flex-grow">
-          {product.pricing.active_sale && (
+        <CardContent className="grow">
+          {product.pricing?.active_sale && (
             <p className="font-semibold text-red-500 text-sm line-through sm:text-base">
               {formatCents(product.pricing.price_original, product.currency)}
             </p>
           )}
 
           <p className="font-semibold text-green-500 text-sm sm:text-base">
-            {formatCents(product.pricing.price_final, product.currency)}
+            {formatCents(product.pricing?.price_final ?? 0, product.currency)}
           </p>
         </CardContent>
 

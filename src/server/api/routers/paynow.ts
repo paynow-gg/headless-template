@@ -29,7 +29,7 @@ export const paynowRouter = createTRPCRouter({
       z.object({
         product_id: z.string(),
         quantity: z.number(),
-        gameserver_id: z.string().optional().nullable(),
+        gameserver_id: z.string().optional(),
         increment: z.boolean().default(true),
         subscription: z.boolean().default(false),
       }),
@@ -46,22 +46,20 @@ export const paynowRouter = createTRPCRouter({
             quantity: z.number(),
             gift_to: z
               .object({
-                platform: z.string(),
+                platform: z.enum(["steam", "minecraft", "paynow_name"]),
                 id: z.string(),
               })
-              .optional()
-              .nullable(),
-            gift_to_customer_id: z.string().optional().nullable(),
-            selected_gameserver_id: z.string().optional().nullable(),
+              .optional(),
+            selected_gameserver_id: z.string().optional(),
           })
           .array(),
       }),
     )
     .mutation(({ ctx, input }) => PayNowService.checkout(ctx, input)),
 
-  checkoutFromCart: publicProcedure
-    .input(z.any())
-    .mutation(({ ctx, input }) => PayNowService.checkoutFromCart(ctx, input)),
+  checkoutFromCart: publicProcedure.mutation(({ ctx }) =>
+    PayNowService.checkoutFromCart(ctx),
+  ),
 
   minecraftLogin: publicProcedure
     .input(
@@ -99,19 +97,17 @@ export const paynowRouter = createTRPCRouter({
       return token;
     }),
 
-  getSteamLoginUrl: publicProcedure.query(async ({ ctx }) =>
-    SteamService.getLoginUrl(),
-  ),
+  getSteamLoginUrl: publicProcedure.query(() => SteamService.getLoginUrl()),
 
   logout: publicProcedure.mutation(({ ctx }) => PayNowService.logout(ctx)),
 
   getGiftcardBalanceByCode: publicProcedure
     .input(
       z.object({
-        code: z.string().min(1).trim(),
+        code: z.string().min(1, "Min 1 char").max(24, "Max 24 chars").trim(),
       }),
     )
-    .mutation(({ input }) =>
-      PayNowService.getGiftcardBalanceByCode(input.code),
+    .mutation(({ ctx, input }) =>
+      PayNowService.getGiftcardBalanceByCode(ctx, input.code),
     ),
 });

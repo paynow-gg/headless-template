@@ -56,7 +56,7 @@ export default function AuthCard() {
             src={auth.profile.avatar_url}
             height={32}
             width={32}
-            alt={auth.name || auth.steam.name}
+            alt={auth.name ?? ""}
             className="rounded-xs"
           />
         )}
@@ -64,7 +64,7 @@ export default function AuthCard() {
         {auth ? (
           <>
             <div className="p-4 text-left text-sm">
-              <p className="font-semibold">{auth.name || auth.steam.name}</p>
+              <p className="font-semibold">{auth.name}</p>
 
               <p>
                 {totalItems} item(s) • {formatCents(totalCents, cart?.currency)}
