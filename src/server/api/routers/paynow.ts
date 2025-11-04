@@ -29,7 +29,11 @@ export const paynowRouter = createTRPCRouter({
       z.object({
         product_id: z.string(),
         quantity: z.number(),
-        gameserver_id: z.string().optional(),
+        gameserver_id: z
+          .string()
+          .optional()
+          .nullable()
+          .transform((x) => x ?? undefined),
         increment: z.boolean().default(true),
         subscription: z.boolean().default(false),
       }),
