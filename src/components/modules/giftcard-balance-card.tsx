@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import type Module from "~/server/api/types/paynow/module";
 import { type RouterInputs, api } from "~/trpc/react";
 import { Button } from "../ui/button";
 import {
@@ -15,11 +16,11 @@ import { Input } from "../ui/input";
 
 type GiftcardBalanceInput = RouterInputs["paynow"]["getGiftcardBalanceByCode"];
 
-// type Props = {
-//   module: Module<"giftcard_balance">
-// }
+type Props = {
+  module: Module<"giftcard_balance">;
+};
 
-export default function GiftcardBalanceCard() {
+export default function GiftcardBalanceCard({ module }: Props) {
   const form = useForm<GiftcardBalanceInput>({
     defaultValues: {
       code: "",
