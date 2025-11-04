@@ -1,4 +1,4 @@
-import type Order from "./order";
+import type { ManagementSchemas } from "@paynow-gg/typescript-sdk";
 
 export type ModuleType =
   | "payment_goal"
@@ -57,7 +57,7 @@ export default interface Module<T extends ModuleType = ModuleType> {
   id: T;
   data: {
     settings: ModuleSettings<T>;
-    orders?: Order[];
+    orders?: ManagementSchemas["OrderDto"][];
     revenue?: string;
   };
 }

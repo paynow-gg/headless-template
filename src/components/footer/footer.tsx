@@ -34,7 +34,7 @@ const Footer = () => {
   return (
     <div className="mt-32 flex flex-col border-t bg-card shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.5)]">
       <footer>
-        <div className="mx-auto max-w-screen-xl">
+        <div className="mx-auto max-w-7xl">
           <div className="grid grid-cols-1 gap-x-16 gap-y-10 px-6 py-12 md:grid-cols-3 xl:px-0">
             <div>
               <h6>About Us</h6>

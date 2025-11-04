@@ -4,6 +4,10 @@ const ipv4Regex =
 const ipv6Regex =
   /^(?!.*::.*::)(?!.*::1$)(?!fe80:)(?!fc00:)(?!ff00:)([0-9a-fA-F]{1,4}:){1,7}[0-9a-fA-F]{1,4}$|^(?!.*::.*::)(?!.*::1$)(?!fe80:)(?!fc00:)(?!ff00:)([0-9a-fA-F]{1,4}:)*::([0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4}$|^::$/;
 
-export default function isValidPublicIP(ip: string): boolean {
+export default function isValidPublicIP(ip?: string): boolean {
+  if (!ip) {
+    return false;
+  }
+
   return ipv4Regex.test(ip) || ipv6Regex.test(ip);
 }

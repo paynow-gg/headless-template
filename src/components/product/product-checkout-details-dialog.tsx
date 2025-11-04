@@ -21,23 +21,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import type Product from "~/server/api/types/paynow/product";
-import { api } from "~/trpc/react";
+import { type RouterOutputs, api } from "~/trpc/react";
 
-export interface ProductCheckoutDetails {
+export type ProductCheckoutDetails = {
   productId: string;
   subscription: boolean;
   gift: boolean;
   gameServerId?: string;
   giftUsernameOrSteamId?: string;
-}
+};
 
-interface Props {
-  product?: Product;
+type Props = {
+  product?: RouterOutputs["paynow"]["getProducts"][number];
   details: ProductCheckoutDetails | null;
   setDetails: (value: ProductCheckoutDetails | null) => void;
   onConfirm: (details: ProductCheckoutDetails) => void;
-}
+};
 
 type FormData = {
   gameServerId?: string;
@@ -51,6 +50,7 @@ export default function ProductCheckoutDetailsDialog({
   onConfirm,
 }: Props) {
   const { data: store } = api.paynow.getStore.useQuery();
+
   const [open, setOpen] = useState(false);
 
   const form = useForm<FormData>({

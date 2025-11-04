@@ -34,7 +34,7 @@ export default function AuthDialogSteam({
             We're redirecting you to Steam to login. Sit tight!
           </DialogDescription>
 
-          <CircleNotchIcon className="fade-in mt-2 animate-spin text-4xl duration-300 [animation-duration:1s]" />
+          <CircleNotchIcon className="fade-in animation-duration-[1s] mt-2 animate-spin text-4xl duration-300" />
         </DialogHeader>
       </DialogContent>
     </Dialog>

@@ -1,7 +1,5 @@
 "use client";
 
-import type Product from "~/server/api/types/paynow/product";
-
 import {
   Dialog,
   DialogContent,
@@ -9,11 +7,15 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 
-export default function ProductInfoDialog({
-  product,
-  open,
-  setOpen,
-}: { product: Product; open: boolean; setOpen: (open: boolean) => void }) {
+import type { RouterOutputs } from "~/trpc/react";
+
+type Props = {
+  product: RouterOutputs["paynow"]["getProducts"][number];
+  open: boolean;
+  setOpen: (open: boolean) => void;
+};
+
+export default function ProductInfoDialog({ product, open, setOpen }: Props) {
   return (
     <Dialog open={open} onOpenChange={(open) => setOpen(open)}>
       <DialogContent>

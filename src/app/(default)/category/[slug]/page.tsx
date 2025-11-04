@@ -5,9 +5,10 @@ import ProductCard from "~/components/product/product-card";
 import ProductCheckoutDetailsDialog, {
   type ProductCheckoutDetails,
 } from "~/components/product/product-checkout-details-dialog";
-import type Product from "~/server/api/types/paynow/product";
 import { useCartSidebar } from "~/stores/useCartSidebar";
-import { api } from "~/trpc/react";
+import { type RouterOutputs, api } from "~/trpc/react";
+
+type Product = RouterOutputs["paynow"]["getProducts"][number];
 
 export default function CategoryPage({
   params,

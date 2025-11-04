@@ -1,10 +1,10 @@
 "use client";
 
+import PaynowJS from "@paynow-gg/paynow.js";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { useAuthDialog } from "~/stores/useAuthDialog";
 import { useCartSidebar } from "~/stores/useCartSidebar";
-
 import { api } from "~/trpc/react";
 
 export default function PendingCartHandler() {
@@ -32,7 +32,11 @@ export default function PendingCartHandler() {
 
   const checkoutMutation = api.paynow.checkout.useMutation({
     onSuccess: (data) => {
-      window.location.href = data.url;
+      cartSidebar.setOpen(false);
+
+      PaynowJS.checkout.open({
+        token: data.token,
+      });
     },
     onError: (error) => {
       toast(error.message);
@@ -72,10 +76,10 @@ export default function PendingCartHandler() {
       const giftTo =
         customerProfilePlatform && giftUsernameOrSteamId
           ? {
-              platform: customerProfilePlatform,
+              platform: customerProfilePlatform as "steam" | "paynow_name",
               id: giftUsernameOrSteamId,
             }
-          : null;
+          : undefined;
 
       checkoutMutation
         .mutateAsync({
@@ -119,6 +123,19 @@ export default function PendingCartHandler() {
 
     handleAddToCart();
   }, [auth, cartSidebar.pendingItem]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: n/a
+  useEffect(() => {
+    const onCompleted = () => {
+      utils.paynow.getCart.invalidate();
+    };
+
+    PaynowJS.checkout.on("completed", onCompleted);
+
+    return () => {
+      PaynowJS.checkout.off("completed", onCompleted);
+    };
+  }, []);
 
   return null;
 }

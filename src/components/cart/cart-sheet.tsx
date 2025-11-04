@@ -1,5 +1,6 @@
 "use client";
 
+import PaynowJS from "@paynow-gg/paynow.js";
 import {
   RepeatIcon,
   ShoppingBagOpenIcon,
@@ -43,7 +44,9 @@ function CartSheet() {
 
   const checkoutMutation = api.paynow.checkoutFromCart.useMutation({
     onSuccess: (result) => {
-      window.location.href = result.url;
+      cartSidebar.setOpen(false);
+
+      PaynowJS.checkout.open({ token: result.token });
     },
     onError: (result) => {
       toast(result.message);
@@ -225,7 +228,7 @@ function CartSheet() {
 
           <Button
             variant={"default"}
-            onClick={() => checkoutMutation.mutate(cart)}
+            onClick={() => checkoutMutation.mutate()}
             disabled={checkoutMutation.isPending || !cart || !cart.lines.length}
           >
             {checkoutMutation.isPending ? "Checking Out..." : "Checkout"}

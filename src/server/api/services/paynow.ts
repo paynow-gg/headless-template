@@ -1,105 +1,83 @@
-import { env } from "~/env";
-
-import axios, {
-  AxiosError,
-  type AxiosInstance,
-  type AxiosRequestConfig,
-} from "axios";
-
 import { TRPCError } from "@trpc/server";
-
 import { Cookie } from "tough-cookie";
+import { env } from "~/env";
 
 import type Context from "../types/context";
 
-import type Cart from "../types/paynow/cart";
-import type Customer from "../types/paynow/customer";
-import type GiftCard from "../types/paynow/giftCard";
+import axios from "axios";
+
+import {
+  type ManagementSchemas,
+  createManagementClient,
+  isPayNowError,
+} from "@paynow-gg/typescript-sdk";
 import type Module from "../types/paynow/module";
-import type Navlink from "../types/paynow/navlink";
-import type Product from "../types/paynow/product";
-import type Store from "../types/paynow/store";
-import type Tag from "../types/paynow/tag";
+
+const management = createManagementClient(
+  env.NEXT_PUBLIC_PAYNOW_STORE_ID,
+  env.PAYNOW_API_KEY,
+);
 
 export default class PayNowService {
-  private static HTTP: AxiosInstance = axios.create({
-    baseURL: "https://api.paynow.gg/v1",
-    headers: {
-      "x-paynow-store-id": env.NEXT_PUBLIC_PAYNOW_STORE_ID,
-    },
-  });
-
-  private static async request<T>(config: AxiosRequestConfig) {
-    const request = await PayNowService.HTTP.request(config);
-    return request.data as T;
-  }
-
   public static async getStore(ctx: Context) {
-    return PayNowService.request<Store>({
-      method: "GET",
-      url: "/store",
-      headers: ctx.payNowStorefrontHeaders,
-    });
+    const request = await ctx.paynowStorefrontClient.store.getStorefrontStore();
+
+    return request.data;
   }
 
   public static async getProducts(ctx: Context) {
-    return PayNowService.request<Product[]>({
-      method: "GET",
-      url: "/store/products",
-      headers: ctx.payNowStorefrontHeaders,
-    });
+    const request =
+      await ctx.paynowStorefrontClient.products.getStorefrontProducts();
+
+    return request.data;
   }
 
   public static async getNavlinks(ctx: Context) {
-    return PayNowService.request<Navlink[]>({
-      method: "GET",
-      url: "/store/navlinks",
-      headers: ctx.payNowStorefrontHeaders,
-    });
+    const request =
+      await ctx.paynowStorefrontClient.navlinks.getStorefrontNavLinks();
+
+    return request.data;
   }
 
   public static async getTags(ctx: Context) {
-    return PayNowService.request<Tag[]>({
-      method: "GET",
-      url: "/store/tags",
-      headers: ctx.payNowStorefrontHeaders,
-    });
+    const request = await ctx.paynowStorefrontClient.tags.getStorefrontTags();
+
+    return request.data;
   }
 
-  public static async getModules(ctx: Context) {
-    return PayNowService.request<Module[]>({
-      method: "GET",
-      url: `/webstores/${env.NEXT_PUBLIC_PAYNOW_STORE_ID}/modules/prepared`,
-      headers: ctx.payNowStorefrontHeaders,
-    });
+  public static async getModules(_ctx: Context) {
+    const request = await axios.get(
+      `https://api.paynow.gg/v1/webstores/${env.NEXT_PUBLIC_PAYNOW_STORE_ID}/modules/prepared`,
+    );
+
+    return request.data as unknown as Module[];
   }
 
   public static async getAuth(ctx: Context) {
     try {
-      return await PayNowService.request<Customer>({
-        method: "GET",
-        url: "/store/customer",
-        headers: ctx.payNowStorefrontHeaders,
-      });
+      const request =
+        await ctx.paynowStorefrontClient.customer.getStorefrontCustomer();
+
+      return request.data;
     } catch (err) {
-      if (err instanceof AxiosError && err.response?.status === 401) {
+      if (isPayNowError(err) && err.status === 401) {
         return null;
       }
+
       throw err;
     }
   }
 
   public static async getCart(ctx: Context) {
     try {
-      return await PayNowService.request<Cart>({
-        method: "GET",
-        url: "/store/cart",
-        headers: ctx.payNowStorefrontHeaders,
-      });
+      const request = await ctx.paynowStorefrontClient.cart.getCart();
+
+      return request.data;
     } catch (err) {
-      if (err instanceof AxiosError && err.response?.status === 401) {
+      if (isPayNowError(err) && err.status === 401) {
         return null;
       }
+
       throw err;
     }
   }
@@ -109,75 +87,66 @@ export default class PayNowService {
     input: {
       product_id: string;
       quantity: number;
-      gameserver_id?: string | null;
+      gameserver_id?: string;
       increment?: boolean;
+      subscription?: boolean;
     },
   ) {
-    return PayNowService.request<void>({
-      method: "PUT",
-      url: "/store/cart/lines",
-      headers: ctx.payNowStorefrontHeaders,
-      params: input,
+    const request = await ctx.paynowStorefrontClient.cart.addLine({
+      params: {
+        product_id: input.product_id,
+        quantity: input.quantity,
+        gameserver_id: input.gameserver_id,
+        increment: input.increment ? "1" : "0",
+        subscription: input.subscription ? "1" : "0",
+      },
     });
+
+    return request.data;
   }
 
   public static async checkout(
     ctx: Context,
     input: {
-      subscription: boolean;
       lines: Array<{
         product_id: string;
         quantity: number;
-        gift_to?: { platform: string; id: string } | null;
-        gift_to_customer_id?: string | null;
-        selected_gameserver_id?: string | null;
+        gift_to?: {
+          platform: ManagementSchemas["CustomerProfilePlatform"];
+          id: string;
+        };
+        selected_gameserver_id?: string;
         subscription?: boolean;
       }>;
     },
   ) {
     try {
-      return await PayNowService.request<{ url: string }>({
-        method: "POST",
-        url: "/checkouts",
-        headers: ctx.payNowStorefrontHeaders,
-        data: input,
-      });
+      const request =
+        await ctx.paynowStorefrontClient.checkout.createCheckoutSession({
+          data: input,
+        });
+
+      return request.data;
     } catch (err) {
-      if (err instanceof AxiosError && err.response?.status === 400) {
+      if (isPayNowError(err)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: err.response.data.message,
         });
       }
+
       throw err;
     }
   }
 
-  public static async checkoutFromCart(
-    ctx: Context,
-    input: {
-      subscription: boolean;
-      lines: Array<{
-        product_id: string;
-        quantity: number;
-        gift_to?: { platform: string; id: string } | null;
-        gift_to_customer_id?: string | null;
-        selected_gameserver_id?: string | null;
-        subscription?: boolean;
-      }>;
-    },
-  ) {
+  public static async checkoutFromCart(ctx: Context) {
     try {
-      return await PayNowService.request<{ url: string }>({
-        method: "POST",
-        url: "/store/cart/checkout",
-        headers: ctx.payNowStorefrontHeaders,
-        data: input,
-      });
-    } catch (err) {
-      console.log(err);
+      const request =
+        await ctx.paynowStorefrontClient.cart.createCartCheckout();
 
-      if (err instanceof AxiosError && err.response?.status === 400) {
+      return request.data;
+    } catch (err) {
+      if (isPayNowError(err)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: err.response.data.message,
@@ -193,41 +162,31 @@ export default class PayNowService {
     platform: "bedrock" | "java",
   ): Promise<string> {
     try {
-      const customer = await PayNowService.request<Customer>({
-        method: "GET",
-        url: `/stores/${env.NEXT_PUBLIC_PAYNOW_STORE_ID}/customers/lookup`,
-        headers: {
-          Authorization: `APIKey ${env.PAYNOW_API_KEY}`,
-        },
+      const request = await management.customers.lookupCustomer({
         params:
           platform === "bedrock"
             ? { minecraft_bedrock_name: username }
             : { minecraft_java_name: username },
       });
 
-      return customer.id;
+      return request.data.id;
     } catch (err) {
-      if (!(err instanceof AxiosError && err.response?.status === 404)) {
+      if (!(isPayNowError(err) && err.status === 404)) {
         throw err;
       }
     }
 
     try {
-      const newCustomer = await PayNowService.request<Customer>({
-        method: "POST",
-        url: `/stores/${env.NEXT_PUBLIC_PAYNOW_STORE_ID}/customers`,
-        headers: {
-          Authorization: `APIKey ${env.PAYNOW_API_KEY}`,
-        },
+      const request = await management.customers.createCustomer({
         data: {
           name: username,
           minecraft_platform: platform,
         },
       });
 
-      return newCustomer.id;
+      return request.data.id;
     } catch (err) {
-      if (err instanceof AxiosError && err.response?.status === 404) {
+      if (isPayNowError(err) && err.status === 404) {
         throw new TRPCError({
           message: `No account was found for given ${platform} account`,
           code: "NOT_FOUND",
@@ -240,55 +199,43 @@ export default class PayNowService {
 
   public static async findOrCreateSteamCustomer(steamId: string) {
     try {
-      const customer = await PayNowService.request<Customer>({
-        method: "GET",
-        url: `/stores/${env.NEXT_PUBLIC_PAYNOW_STORE_ID}/customers/lookup`,
-        headers: {
-          Authorization: `APIKey ${env.PAYNOW_API_KEY}`,
-        },
+      const request = await management.customers.lookupCustomer({
         params: {
           steam_id: steamId,
         },
       });
 
-      return customer.id;
+      return request.data.id;
     } catch (err) {
-      if (!(err instanceof AxiosError && err.response?.status === 404)) {
+      if (!(isPayNowError(err) && err.status === 404)) {
         throw err;
       }
     }
 
-    const newCustomer = await PayNowService.request<Customer>({
-      method: "POST",
-      url: `/stores/${env.NEXT_PUBLIC_PAYNOW_STORE_ID}/customers`,
-      headers: {
-        Authorization: `APIKey ${env.PAYNOW_API_KEY}`,
-      },
+    const request = await management.customers.createCustomer({
       data: {
         steam_id: steamId,
       },
     });
 
-    return newCustomer.id;
+    return request.data.id;
   }
 
   public static async generateAuthToken(customerId: string): Promise<string> {
     if (!customerId) {
       throw new TRPCError({
-        message: "Failed to create or find customer",
+        message: "No customer ID provided to generateAuthToken",
         code: "BAD_GATEWAY",
       });
     }
 
-    const { token } = await PayNowService.request<{ token: string }>({
-      method: "POST",
-      url: `/stores/${env.NEXT_PUBLIC_PAYNOW_STORE_ID}/customers/${customerId}/tokens`,
-      headers: {
-        Authorization: `APIKey ${env.PAYNOW_API_KEY}`,
+    const request = await management.customers.createCustomerToken({
+      path: {
+        customerId,
       },
     });
 
-    return token;
+    return request.data.token;
   }
 
   public static setAuthCookie(ctx: Context, token: string): void {
@@ -325,13 +272,11 @@ export default class PayNowService {
     );
   }
 
-  public static async getGiftcardBalanceByCode(code: string): Promise<number> {
-    const giftCardsReq = await PayNowService.request<GiftCard[]>({
-      method: "GET",
-      url: `/stores/${env.NEXT_PUBLIC_PAYNOW_STORE_ID}/giftcards`,
-      headers: {
-        Authorization: `APIKey ${env.PAYNOW_API_KEY}`,
-      },
+  public static async getGiftcardBalanceByCode(
+    ctx: Context,
+    code: string,
+  ): Promise<number> {
+    const request = await management.giftcards.getGiftCards({
       params: {
         code: code,
         limit: 1,
@@ -339,7 +284,7 @@ export default class PayNowService {
       },
     });
 
-    const giftCard = giftCardsReq[0];
+    const giftCard = request?.data?.[0];
 
     if (!giftCard) {
       throw new TRPCError({

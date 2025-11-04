@@ -7,6 +7,7 @@ An integration of the PayNow.gg Headless API built with Create T3 App, Next.js 1
 - 🛒 Complete e-commerce store template
 - 🎨 Fully customizable theming system
 - 🔐 PayNow.gg Steam & Minecraft API Integration
+- 🛡️ Built-In PayNow.js Integration
 - 🧩 Built-in support for PayNow Template Modules
 - ⚡ Built with Next.js v15 & React v19
 - 📱 Mobile responsive design
