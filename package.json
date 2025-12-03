@@ -39,7 +39,7 @@
     "dlx": "^0.2.1",
     "husky": "^9.1.7",
     "lucide-react": "^0.511.0",
-    "next": "^15.5.6",
+    "next": "^15.5.7",
     "next-themes": "^0.4.6",
     "nextjs-toploader": "^3.9.17",
     "react": "^19.2.0",
